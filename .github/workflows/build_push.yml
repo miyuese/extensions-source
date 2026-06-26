@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'fix/**'
     paths:
       - '**'
       - '!**.md'
@@ -86,12 +87,11 @@ jobs:
           ./gradlew $MODULES
 
       - name: Upload APKs (${{ matrix.chunk.number }})
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: "github.repository == 'keiyoushi/extensions-source'"
+        uses: actions/upload-artifact@043fb46d1a93c77aae6567e1c7c64a875d1fc6a0a # v7.0.1
         with:
           name: "individual-apks-${{ matrix.chunk.number }}"
           path: "**/*.apk"
-          retention-days: 1
+          retention-days: 7
 
       - name: Clean up CI files
         run: rm signingkey.jks
