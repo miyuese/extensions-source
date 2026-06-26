@@ -348,6 +348,7 @@ class Happymh :
 
     companion object {
         private const val DUMMY_CHAPTER_MARK = "dummy-mark"
+
         // 模拟真实 Android 浏览器 UA 以规避 Cloudflare 的 bot 检测
         private const val DEFAULT_UA = "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36"
     }
