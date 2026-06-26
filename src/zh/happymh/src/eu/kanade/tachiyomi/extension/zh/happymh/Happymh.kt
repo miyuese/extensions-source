@@ -13,6 +13,7 @@ import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.util.asJsoup
+import keiyoushi.network.rateLimit
 import keiyoushi.utils.getPreferences
 import keiyoushi.utils.parseAs
 import okhttp3.Cookie
@@ -26,6 +27,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.asResponseBody
 import rx.Observable
+import kotlin.time.Duration.Companion.seconds
 
 const val PREF_KEY_CUSTOM_UA = "pref_key_custom_ua_"
 
@@ -67,16 +69,19 @@ class Happymh :
 
     override val client: OkHttpClient = network.client.newBuilder()
         .addInterceptor(rewriteOctetStream)
+        .rateLimit(2, 1.seconds) { it.host == baseUrl.toHttpUrl().host }
         .build()
 
     override fun headersBuilder(): Headers.Builder {
         val builder = super.headersBuilder()
         val userAgent = preferences.getString(PREF_KEY_CUSTOM_UA, "")!!
-        return if (userAgent.isNotBlank()) {
+        if (userAgent.isNotBlank()) {
             builder.set("User-Agent", userAgent)
         } else {
-            builder
+            builder.set("User-Agent", DEFAULT_UA)
         }
+        return builder
+            .add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
     }
 
     // Popular
@@ -122,6 +127,9 @@ class Happymh :
 
             val headers = headersBuilder()
                 .add("Referer", "$baseUrl/sssearch")
+                .add("Origin", "$baseUrl")
+                .add("Accept", "application/json, text/plain, */*")
+                .add("X-Requested-With", "XMLHttpRequest")
                 .build()
 
             return POST("$baseUrl/v2.0/apis/manga/ssearch", headers, body)
@@ -294,7 +302,7 @@ class Happymh :
         EditTextPreference(context).apply {
             key = PREF_KEY_CUSTOM_UA
             title = "User Agent"
-            summary = "留空则使用应用设置中的默认 User Agent，重启生效"
+            summary = "留空则使用内置默认 User Agent（推荐），输入自定义值则覆盖内置 UA"
 
             setOnPreferenceChangeListener { _, newValue ->
                 try {
@@ -340,5 +348,7 @@ class Happymh :
 
     companion object {
         private const val DUMMY_CHAPTER_MARK = "dummy-mark"
+        // 模拟真实 Android 浏览器 UA 以规避 Cloudflare 的 bot 检测
+        private const val DEFAULT_UA = "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36"
     }
 }
